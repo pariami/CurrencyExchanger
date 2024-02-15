@@ -29,33 +29,46 @@ android {
             )
         }
     }
+    testOptions {
+        packagingOptions {
+            jniLibs {
+                useLegacyPackaging = true
+            }
+        }
+    }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
+
+    packaging {
+        resources {
+            resources.excludes.add("META-INF/*")
+        }
+    }
+
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
 dependencies {
+    implementation(project(mapOf("path" to ":domain")))
+    implementation(platform(libs.kotlin.bom))
 
-    implementation(libs.core.ktx)
     implementation(libs.compose.ui)
     implementation(libs.compose.activity)
     implementation(libs.material3)
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.ui.graphics)
+
 }
