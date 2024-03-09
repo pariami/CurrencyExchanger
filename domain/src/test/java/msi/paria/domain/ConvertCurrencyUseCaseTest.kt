@@ -1,15 +1,9 @@
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
-import msi.paria.domain.model.ExchangeRate
-import msi.paria.domain.model.InvalidExchangeRateException
-import msi.paria.domain.model.Transaction
-import msi.paria.domain.repository.ExchangeRateRepository
-import msi.paria.domain.usecase.ConvertCurrencyUseCase
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.util.Currency
 
 class ConvertCurrencyUseCaseTest {
 

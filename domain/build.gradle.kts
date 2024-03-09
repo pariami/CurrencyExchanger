@@ -1,6 +1,8 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    kotlin("kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -11,7 +13,6 @@ android {
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -36,9 +37,19 @@ android {
 }
 
 dependencies {
-    implementation(libs.junit)
-    implementation(libs.test.mockk)
-    testImplementation(libs.test.mockk)
+
+    implementation(libs.hilt)
+    kapt(libs.hilt.compiler)
+
+    implementation(libs.kotlin.coroutines)
     testImplementation(libs.test.coroutines)
+
+    implementation(libs.paging)
+
+    testImplementation(libs.test.mockk)
+
+    implementation(libs.test.junit)
     testImplementation(libs.junit)
+    testImplementation(libs.test.turbine)
+
 }

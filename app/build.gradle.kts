@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    kotlin("kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -54,14 +56,28 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
+
+    flavorDimensions.add("type")
+    productFlavors {
+        create("api") {
+        }
+
+        create("mock") {
+        }
+    }
+
 }
 
 dependencies {
     implementation(project(mapOf("path" to ":domain")))
+    implementation(project(mapOf("path" to ":data")))
+
     implementation(platform(libs.kotlin.bom))
 
     implementation(libs.compose.ui)
@@ -70,5 +86,33 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.ui.graphics)
+
+    implementation(libs.coil)
+    implementation(libs.paging)
+    implementation(libs.paging.compose)
+
+    implementation(libs.lifecycle)
+
+    implementation(libs.navigation)
+
+    implementation(libs.hilt)
+    implementation(libs.hilt.compose)
+    kapt(libs.hilt.compiler)
+
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
+
+    implementation(libs.test.junit)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.test.espresso)
+    androidTestImplementation(libs.test.junit)
+    androidTestImplementation(libs.compose.ui.test)
+
+    androidTestImplementation(libs.test.mockk.android)
+
+    testImplementation(libs.test.coroutines)
+    testImplementation(libs.test.mockk)
+    testImplementation(libs.test.turbine)
+
 
 }

@@ -128,3 +128,4 @@ dependencyResolutionManagement {
 rootProject.name = "CurrencyExchanger"
 include(":app")
 include(":domain")
+include(":data")
