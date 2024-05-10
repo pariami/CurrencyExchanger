@@ -5,11 +5,13 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import msi.paria.data.dto.db.BalanceDto
+import msi.paria.data.dto.db.RateDto
 import msi.paria.data.dto.db.TransactionDto
 import msi.paria.data.repository.db.dao.BalanceDao
+import msi.paria.data.repository.db.dao.RateDao
 import msi.paria.data.repository.db.dao.TransactionDao
 
-@Database(entities = [TransactionDto::class, BalanceDto::class], version = 1)
+@Database(entities = [TransactionDto::class, BalanceDto::class, RateDto::class], version = 1)
 abstract class TransactionDB : RoomDatabase() {
     companion object {
         @Volatile
@@ -30,4 +32,5 @@ abstract class TransactionDB : RoomDatabase() {
 
     abstract fun transactionDao(): TransactionDao
     abstract fun balanceDao(): BalanceDao
+    abstract fun rateDao(): RateDao
 }

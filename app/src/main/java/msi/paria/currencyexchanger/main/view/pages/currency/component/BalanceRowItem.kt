@@ -15,8 +15,8 @@ fun BalanceRowItem(modifier:Modifier = Modifier,
                    color: Color = Color.Black
 ){
     Text(
-        text = "${balance.amount} ${balance.name} ",
-        modifier = Modifier.padding(8.dp),
+        text = "${balance.amount} ${balance.name}",
+        modifier = modifier.padding(8.dp),
         style = TextStyle(color = Color.Black)
     )
 }

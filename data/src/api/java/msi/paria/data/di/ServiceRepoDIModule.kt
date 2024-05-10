@@ -40,7 +40,7 @@ class ServiceRepoDIModule {
 
     @Provides
     @Singleton
-    fun provideTransactionDao(@ApplicationContext ctx: Context): TransactionDB {
+    fun provideTransactionDb(@ApplicationContext ctx: Context): TransactionDB {
         return TransactionDB.getDatabase(ctx)
     }
 

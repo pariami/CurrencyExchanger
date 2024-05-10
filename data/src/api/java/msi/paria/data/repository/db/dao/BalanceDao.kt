@@ -1,7 +1,6 @@
 package msi.paria.data.repository.db.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -20,7 +19,4 @@ interface BalanceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(balances: List<BalanceDto>)
-
-    @Delete
-    fun delete(balanceDto: BalanceDto)
 }

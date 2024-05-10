@@ -12,7 +12,6 @@ interface TransactionDao {
     @Query("SELECT * FROM `transaction` order by id asc")
     fun getTransactions(): List<TransactionDto>
 
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(transaction: TransactionDto)
 

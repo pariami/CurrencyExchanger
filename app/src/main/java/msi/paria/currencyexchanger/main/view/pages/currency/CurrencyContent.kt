@@ -6,14 +6,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,9 +21,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import msi.paria.currencyexchanger.R
 import msi.paria.currencyexchanger.main.view.pages.currency.component.BalanceSection
-import msi.paria.currencyexchanger.main.view.pages.currency.component.CurrencyIconRow
-import msi.paria.currencyexchanger.main.view.pages.currency.component.CurrencySpinner
-import msi.paria.currencyexchanger.main.view.pages.currency.component.CurrencyTextField
+import msi.paria.currencyexchanger.main.view.pages.currency.component.CurrencyRow
 import msi.paria.currencyexchanger.main.view.pages.currency.component.PopUpDialog
 import msi.paria.currencyexchanger.main.view.pages.currency.component.SubmitButton
 import msi.paria.domain.model.Balance
@@ -44,83 +41,70 @@ fun CurrencyContent(
     isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
-
-    var selectedFromCurrencyIndex by remember { mutableStateOf(0) }
-    var selectedToCurrencyIndex by remember { mutableStateOf(0) }
-
+    var selectedFromCurrencyIndex by remember { mutableIntStateOf(0) }
+    var selectedToCurrencyIndex by remember { mutableIntStateOf(0) }
     var inputAmount by remember { mutableStateOf(TextFieldValue("0.0")) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         if (isLoading) {
             CircularProgressIndicator(
-                modifier = Modifier
-                    .padding(10.dp)
+                modifier = modifier
                     .align(Alignment.Center)
             )
         } else {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = modifier
             ) {
                 BalanceSection(
                     text = "My Balances",
                     balancesItems = balances,
-                    modifier = Modifier.padding(8.dp)
                 )
 
-                CurrencyIconRow(
+                CurrencyRow(
                     text = "Sell",
                     iconRes = R.drawable.ic_sell,
                     iconBack = Color.Red,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                    amount = inputAmount,
+                    focusable = true,
+                    rates = rates,
+                    selectedCurrencyIndex = selectedFromCurrencyIndex,
+                    onAmountValueEntered = {
+                        onAmountValueEntered(it)
+                        inputAmount = TextFieldValue(it)
+                    },
+                    onCurrencySelected = {
+                        onFromCurrencySelected(it.second)
+                        selectedFromCurrencyIndex = it.first
+                    }
+                )
 
-                    CurrencyTextField(inputAmount.text,
-                        modifier = Modifier
-                            .padding(6.dp)
-                            .weight(1f),
-                        onAmountValueChanged = {
-                            inputAmount = TextFieldValue(it)
-                            onAmountValueEntered(it)
-                        })
-
-                    CurrencySpinner(currencyCodes = rates,
-                        selectedCurrency = rates[selectedFromCurrencyIndex],
-                        onCurrencySelected = { index, currency ->
-                            onFromCurrencySelected(currency)
-                            selectedFromCurrencyIndex = index
-                        })
-                }
-
-                CurrencyIconRow(
+                CurrencyRow(
                     text = "Receive",
                     iconRes = R.drawable.ic_receive,
                     iconBack = Color.Green,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = convertedAmount, modifier = Modifier.padding(4.dp).weight(1f),)
-
-                    CurrencySpinner(
-                        currencyCodes = rates,
-                        selectedCurrency = rates[selectedToCurrencyIndex],
-                        onCurrencySelected = { index, currency ->
-                            onToCurrencySelected(currency)
-                            selectedToCurrencyIndex = index
-                        },
-                    )
-                }
+                    amount = TextFieldValue(convertedAmount),
+                    rates = rates,
+                    selectedCurrencyIndex = selectedToCurrencyIndex,
+                    onAmountValueEntered = {},
+                    onCurrencySelected = {
+                        onToCurrencySelected(it.second)
+                        selectedToCurrencyIndex = it.first
+                    }
+                )
 
                 SubmitButton(
                     text = "Submit",
                     modifier = Modifier
                         .padding(horizontal = 32.dp)
                         .fillMaxWidth(),
-                    onSubmitButtonClicked = { onSubmitButtonClicked() },
+                    onSubmitButtonClicked = onSubmitButtonClicked,
                     submitButtonEnabled = submitButtonEnabled
                 )
 
-                PopUpDialog(message = message,
+                PopUpDialog(
+                    message = message,
                     onDismissDialog = { showDialog.value = false },
                     onConfirmDialog = { showDialog.value = false },
                     showDialog = showDialog.value

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,23 +15,22 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import msi.paria.currencyexchanger.main.state.CurrencyScreenState
-import msi.paria.domain.usecase.UseCase
 import msi.paria.currencyexchanger.main.view.pages.contract.CurrencyScreenEffect
-import msi.paria.currencyexchanger.main.view.pages.currency.CurrencyEvent
 import msi.paria.currencyexchanger.main.view.pages.contract.CurrencyScreenEvent
 import msi.paria.domain.model.Balance
+import msi.paria.domain.model.Currency
 import msi.paria.domain.model.Resource
 import msi.paria.domain.model.Transaction
+import msi.paria.domain.usecase.InternalUseCse
+import msi.paria.domain.usecase.UseCase
 import javax.inject.Inject
-import kotlin.math.round
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val usecase: UseCase,
-    private val dispatcher: CoroutineDispatcher,
+    private val useCase: UseCase,
+    private val internalUseCase: InternalUseCse,
+    private val dispatcher: CoroutineDispatcher
 ) : ViewModel() {
-
-    private val _conversion = MutableStateFlow<CurrencyEvent>(CurrencyEvent.Empty)
 
     private val _state = MutableStateFlow(CurrencyScreenState())
     val state: StateFlow<CurrencyScreenState> = _state.asStateFlow()
@@ -41,9 +39,11 @@ class MainViewModel @Inject constructor(
     val effectFlow = _effectFlow.asSharedFlow()
 
     init {
-        _state.update { state ->
-            state.copy(currencyResponse = Resource.Loading())
-        }
+        initialize()
+    }
+
+    private fun initialize() {
+        _state.update { it.copy(currencyResponse = Resource.Loading()) }
         startFetchingData()
         getAllBalance()
     }
@@ -51,56 +51,60 @@ class MainViewModel @Inject constructor(
     fun onEvent(event: CurrencyScreenEvent) {
         when (event) {
             is CurrencyScreenEvent.OnFromCurrencySelected -> {
-                _state.update { state -> state.copy(fromCurrency = event.currency) }
-                checkBalance(event.currency)
+                updateFromCurrency(event.currency)
+                checkBalanceAndUpdate(event.currency)
             }
 
-            CurrencyScreenEvent.OnSubmitButtonClicked -> {
-                getTransactions()
-            }
-
-            is CurrencyScreenEvent.OnToCurrencySelected -> {
-                _state.update { state -> state.copy(toCurrency = event.currency) }
-            }
+            is CurrencyScreenEvent.OnSubmitButtonClicked -> fetchCommission()
+            is CurrencyScreenEvent.OnToCurrencySelected -> updateToCurrency(event.currency)
 
             is CurrencyScreenEvent.OnAmountValueEntered -> {
-                _state.update { state -> state.copy(amount = event.amount) }
-                checkBalance(_state.value.fromCurrency)
-                convert(
-                    _state.value.amount, _state.value.fromCurrency, _state.value.toCurrency
-                )
-            }
-
-            CurrencyScreenEvent.OnCurrencyRateUpdated -> {
-                convert(
-                    _state.value.amount, _state.value.fromCurrency, _state.value.toCurrency
-                )
-            }
-        }
-    }
-
-    private fun checkBalance(currency:String){
-        viewModelScope.launch(dispatcher) {
-            val balance = usecase.getBalanceByName(currency)
-            val canConvert = (balance?.amount ?: 0.0) >= _state.value.amount.toDouble()
-            _state.update { state -> state.copy(canConvert = canConvert) }
-
-            if (!canConvert) {
-                _state.update { state -> state.copy(message = "This Currency isn't enough for convert") }
-                _effectFlow.tryEmit(CurrencyScreenEffect.ShowResultDialog)
-            } else {
-                _state.update { state -> state.copy(message = "") }
-                _effectFlow.tryEmit(CurrencyScreenEffect.ShowResultDialog)
-            }
-        }
-    }
-    private fun getAllBalance() {
-        viewModelScope.launch(dispatcher) {
-            usecase.getAllBalance().collect { balances ->
-                _state.update { state ->
-                    state.copy(balances = balances)
+                if (event.amount.isNotEmpty()) {
+                    val enteredValue = persianToEnglishNumber(event.amount)
+                    updateAmount(enteredValue)
+                    checkBalanceAndUpdate(_state.value.fromCurrency)
                 }
-                //_effectFlow.emit(CurrencyScreenEffect.OnBalancesReceived)
+            }
+
+            is CurrencyScreenEvent.OnCurrencyRateUpdated -> convert()
+        }
+    }
+
+    private fun updateFromCurrency(currency: String) {
+        _state.update { it.copy(fromCurrency = currency) }
+    }
+
+    private fun updateToCurrency(currency: String) {
+        _state.update { it.copy(toCurrency = currency) }
+    }
+
+    private fun updateAmount(amount: String) {
+        _state.update { it.copy(amount = amount) }
+    }
+
+    private fun checkBalanceAndUpdate(currency: String) {
+        checkBalance(currency)
+        convert()
+    }
+
+    private fun checkBalance(currency: String) {
+        viewModelScope.launch(dispatcher) {
+            val canConvert = internalUseCase.checkBalance(currency, _state.value.amount.toDouble())
+            val message = if (!canConvert) "This Currency isn't enough for convert" else ""
+            _state.update { it.copy(canConvert = canConvert, message = message) }
+            _effectFlow.tryEmit(CurrencyScreenEffect.ChangeSubmitButtonState)
+        }
+    }
+
+    fun getAllBalance() {
+        viewModelScope.launch(dispatcher) {
+            useCase.getAllBalance().collect { balances ->
+                if (balances.isEmpty()) {
+                    useCase.insertBalance(Balance(1, "USD", 100.0))
+                    getAllBalance()
+                } else {
+                    _state.update { it.copy(balances = balances) }
+                }
             }
         }
     }
@@ -110,90 +114,87 @@ class MainViewModel @Inject constructor(
             flow {
                 while (true) {
                     emit(Unit)
-                    delay(5000) // delay for 5 seconds
+                    delay(5000)
                 }
             }.collect {
-                usecase.getExchangeRates(_state.value.fromCurrency).collectLatest { resource ->
-                    _state.update { state ->
-                        state.copy(currencyResponse = resource)
-                    }
-                    when (resource) {
-                        is Resource.Error -> _conversion.value =
-                            CurrencyEvent.Failure(resource.message!!)
-
-                        is Resource.Success -> {
-                            val rates = resource.data!!.rates
-                            _state.update { state ->
-                                state.copy(rates = rates)
-                            }
-                            _effectFlow.emit(CurrencyScreenEffect.OnRatesReceived)
-                        }
-
-                        else -> {
-                            _conversion.value = CurrencyEvent.Failure("Unexpected error")
-                        }
-                    }
+                useCase.getExchangeRates(_state.value.fromCurrency).collectLatest { resource ->
+                    _state.update { it.copy(currencyResponse = resource) }
+                    handleExchangeRatesResponse(resource)
                 }
             }
         }
     }
-    private fun getTransactions() {
+
+    private fun handleExchangeRatesResponse(resource: Resource<Currency>) {
+        when (resource) {
+            is Resource.Error -> {
+                _state.update { it.copy(message = resource.message ?: "Unknown error") }
+                //_effectFlow.tryEmit(CurrencyScreenEffect.ShowResultDialog)
+            }
+
+            is Resource.Success -> {
+                val rates = resource.data?.rates ?: emptyMap()
+                _state.update { it.copy(rates = rates) }
+                _effectFlow.tryEmit(CurrencyScreenEffect.OnRatesReceived)
+            }
+
+            else -> {}
+        }
+    }
+
+    fun fetchCommission() {
         viewModelScope.launch(dispatcher) {
-            val transactions = usecase.getTransactions()
-            val commissionFee = if (transactions.size < 5) 0.0 else 0.7
-
-            _state.update { state -> state.copy(commissionFee = commissionFee) }
-
-            /*convert(
-                _state.value.amount, _state.value.fromCurrency, _state.value.toCurrency
-            )*/
+            val commissionFee = internalUseCase.getCommissionUseCase()
+            _state.update { it.copy(commissionFee = commissionFee) }
             submit()
         }
     }
 
-    fun convert(amountStr: String, fromCurrency: String, toCurrency: String) {
-        val fromAmount = amountStr.toFloatOrNull() ?: return
-
+    private fun convert() {
         viewModelScope.launch(dispatcher) {
+            val amountStr = _state.value.amount
+            val fromCurrency = _state.value.fromCurrency
+            val toCurrency = _state.value.toCurrency
             val ratesResponse = _state.value.currencyResponse
-            if (ratesResponse is Resource.Success) {
-                val rates = ratesResponse.data!!.rates
-                val fromRate: Double = rates[fromCurrency] ?: 0.0
-                val toRate: Double = rates[toCurrency] ?: 0.0
 
-                val conversionRate = toRate / fromRate
-                val convertedCurrency = round(fromAmount * conversionRate * 100) / 100
-
-                _state.update { state ->
-                    state.copy(
-                        convertedAmount = convertedCurrency,
-                        message = "$fromAmount $fromCurrency = $convertedCurrency $toCurrency // ${(_state.value.commissionFee * _state.value.amount.toDouble() * 100) / 100} $fromCurrency commission fee"
-                    )
-                }
-               // _effectFlow.emit(CurrencyScreenEffect.OnConvertedAmountChanged)
+            val convertedAmount = internalUseCase.currencyConversion(
+                ratesResponse,
+                amountStr,
+                fromCurrency,
+                toCurrency
+            )
+            _state.update {
+                it.copy(
+                    convertedAmount = convertedAmount,
+                    message = "$amountStr $fromCurrency = $convertedAmount $toCurrency, commissionFee: ${_state.value.commissionFee}"
+                )
             }
         }
     }
 
-    private suspend fun submit(){
-        getBalanceByName(_state.value.fromCurrency, _state.value.toCurrency, _state.value.amount.toDouble(), _state.value.convertedAmount)
-        insertTransaction()
-        _effectFlow.emit(CurrencyScreenEffect.ShowResultDialog)
+    private fun submit() {
+        if (_state.value.canConvert) {
+            viewModelScope.launch(dispatcher) {
+                val fromCurrency = _state.value.fromCurrency
+                val toCurrency = _state.value.toCurrency
+                val amount = _state.value.amount.toDouble()
+                val convertedAmount = _state.value.convertedAmount
+
+                transferFunds(fromCurrency, toCurrency, amount, convertedAmount)
+                insertTransaction()
+            }
+        }
+        _effectFlow.tryEmit(CurrencyScreenEffect.ShowResultDialog)
     }
 
-    private fun getBalanceByName(
-        fromCurrency: String, toCurrency: String, fromAmount: Double, convertedCurrency: Double
+    private fun transferFunds(
+        fromCurrency: String,
+        toCurrency: String,
+        fromAmount: Double,
+        convertedCurrency: Double
     ) {
         viewModelScope.launch(dispatcher) {
-            val fromBalance =
-                usecase.getBalanceByName(fromCurrency) ?: Balance(0, fromCurrency, 0.0)
-            fromBalance.amount -= fromAmount
-            usecase.insertBalance(fromBalance)
-
-            val toBalance = usecase.getBalanceByName(toCurrency) ?: Balance(0, toCurrency, 0.0)
-            toBalance.amount += convertedCurrency
-            usecase.insertBalance(toBalance)
-
+            internalUseCase.transferFunds(fromCurrency, toCurrency, fromAmount, convertedCurrency)
             getAllBalance()
         }
     }
@@ -206,6 +207,17 @@ class MainViewModel @Inject constructor(
             convertedAmount = _state.value.convertedAmount,
             commissionFee = (_state.value.commissionFee * _state.value.amount.toDouble() * 100) / 100
         )
-        usecase.insertTransaction(transaction)
+        useCase.insertTransaction(transaction)
+    }
+
+    fun persianToEnglishNumber(persianNumber: String): String {
+        val persianDigits = listOf("۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹")
+        val englishDigits = listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+
+        var result = persianNumber
+        for (i in persianDigits.indices) {
+            result = result.replace(persianDigits[i], englishDigits[i])
+        }
+        return result
     }
 }

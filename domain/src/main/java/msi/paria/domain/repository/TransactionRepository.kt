@@ -8,7 +8,6 @@ import msi.paria.domain.model.Transaction
 interface TransactionRepository {
     suspend fun getTransactions(): List<Transaction>
     suspend fun insertTransaction(transaction: Transaction)
-
     suspend fun getBalanceByName(name:String):Balance?
     suspend fun getAllBalance(): Flow<List<Balance>>
     suspend fun insertBalance(balance: Balance)

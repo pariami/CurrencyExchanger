@@ -30,6 +30,4 @@ internal class CurrencyDIModule {
     fun provideExchangeRepository(dataProvider: CurrencyDataProvider): ExchangeRepository {
         return ExchangeRepositoryImp(dataProvider)
     }
-
-
 }

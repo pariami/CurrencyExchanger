@@ -11,10 +11,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
+import msi.paria.currencyexchanger.util.TestTags
 
 @Composable
 fun CurrencySpinner(
@@ -23,12 +24,13 @@ fun CurrencySpinner(
     var expanded by remember { mutableStateOf(false) }
 
     Column(
+        horizontalAlignment = Alignment.End
     ) {
         Text(text = selectedCurrency,
             modifier = Modifier
                 .padding(16.dp)
-                .padding(horizontal = 16.dp)
-                .clickable { expanded = true })
+                .clickable { expanded = true }
+                .testTag(TestTags.dropDownTag))
 
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             currencyCodes.forEachIndexed { index, currency ->
@@ -39,24 +41,4 @@ fun CurrencySpinner(
             }
         }
     }
-}
-
-@Composable
-fun CurrencyItem(currency: String) {
-    Column(Modifier.padding(8.dp)) {
-        // You can customize the appearance of the dropdown items here
-        Text(text = currency)
-    }
-}
-
-@Preview
-@Composable
-fun PreviewCurrencySpinner() {
-    val context = LocalContext.current
-    /*  val currencyCodes = context.resources.getStringArray(R.array.currency_codes).toList()*//* CurrencySpinner(
-        currencyCodes = currencyCodes,
-        selectedCurrency = currencyCodes.first(),
-        onCurrencySelected = (0,""){ }
-    )*//*
-}*/
 }

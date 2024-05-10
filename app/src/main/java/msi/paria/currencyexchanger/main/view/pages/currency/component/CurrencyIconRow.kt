@@ -3,10 +3,10 @@ package msi.paria.currencyexchanger.main.view.pages.currency.component
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-
 @Composable
 fun CurrencyIconRow(
     text: String,
@@ -28,7 +27,7 @@ fun CurrencyIconRow(
     content: @Composable RowScope.() -> Unit,
     ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(15.dp),
+        horizontalArrangement = Arrangement.Absolute.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.padding(top = 6.dp)
     ) {
@@ -46,7 +45,11 @@ fun CurrencyIconRow(
             )
         }
 
-        Text(text = text, modifier = Modifier.padding(start = 4.dp))
+        Text(
+            text = text, modifier = Modifier
+                .padding(start = 4.dp)
+                .width(70.dp)
+        )
 
         content()
     }

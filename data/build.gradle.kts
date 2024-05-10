@@ -25,6 +25,13 @@ android {
             )
         }
     }
+
+    packaging {
+        resources {
+            resources.excludes.add("META-INF/*")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -82,7 +89,11 @@ dependencies {
 
     testImplementation(libs.test.mockk)
 
+    implementation(libs.test.junit)
     testImplementation(libs.junit)
+    androidTestImplementation(libs.test.espresso)
+    androidTestImplementation(libs.test.junit)
+    androidTestImplementation(libs.compose.ui.test)
     testImplementation(libs.test.coroutines)
 
     testImplementation(libs.test.turbine)
@@ -93,5 +104,5 @@ dependencies {
     androidTestImplementation(libs.test.core.ktx)
     androidTestImplementation(libs.test.junit.ktx)
     androidTestImplementation(libs.test.room)
-    
+    androidTestImplementation(libs.test.mockk.android)
 }

@@ -26,7 +26,6 @@ fun BalanceSection(
     LazyRow(modifier = Modifier.padding(top = 8.dp)) {
         items(balancesItems) { balance ->
             BalanceRowItem(
-                modifier = Modifier.padding(8.dp),
                 balance = balance,
                 color = Color.Black
             )

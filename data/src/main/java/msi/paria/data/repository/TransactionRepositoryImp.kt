@@ -2,7 +2,6 @@ package msi.paria.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import msi.paria.data.dataprovider.CurrencyDataProvider
-import msi.paria.data.repository.db.TransactionDB
 import msi.paria.domain.model.Balance
 import msi.paria.domain.model.Transaction
 import msi.paria.domain.repository.TransactionRepository
@@ -34,5 +33,4 @@ class TransactionRepositoryImp(
     override suspend fun insertAllBalance(balances: List<Balance>) {
         dataProvider.insertAllBalance(balances)
     }
-
 }

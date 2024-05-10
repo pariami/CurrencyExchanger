@@ -10,10 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import msi.paria.currencyexchanger.main.view.pages.contract.CurrencyScreenEffect
-import msi.paria.currencyexchanger.main.view.pages.contract.CurrencyScreenEvent
 import msi.paria.currencyexchanger.main.state.CurrencyScreenState
 import msi.paria.currencyexchanger.main.view.pages.MainViewModel
+import msi.paria.currencyexchanger.main.view.pages.contract.CurrencyScreenEffect
+import msi.paria.currencyexchanger.main.view.pages.contract.CurrencyScreenEvent
 import msi.paria.domain.model.Resource
 
 @Composable
@@ -37,10 +37,13 @@ fun CurrencyScreen() {
                 }
 
                 CurrencyScreenEffect.ShowResultDialog -> {
-                    submitButtonEnabled.value = state.canConvert
-                    if(state.message.isNotEmpty()){
+                    if (state.message.isNotEmpty()) {
                         showDialog.value = true
                     }
+                }
+
+                CurrencyScreenEffect.ChangeSubmitButtonState -> {
+                    submitButtonEnabled.value = state.canConvert
                 }
             }
         }

@@ -9,5 +9,5 @@ data class UseCase @Inject constructor(
     val getAllBalance: GetAllBalance,
     val insertBalance: InsertBalance,
     val insertAllBalance: InsertAllBalance,
-    val getBalanceByName: GetBalanceByName
+    val getBalanceByName: GetBalanceByName,
 )
